@@ -10,10 +10,12 @@ public class OS {
     public enum CallType {SwitchProcess,SendMessage, Open, Close, Read, Seek, Write, GetMapping, CreateProcess, Sleep, GetPID, AllocateMemory, FreeMemory, GetPIDByName, WaitForMessage, Exit}
     public static CallType currentCall;
 
+    //Start the Kernel and if there is a process currently running call stop on it.
+    //Sleep until return value is not null for startup.
     private static void startTheKernel() {
         ki.start();
-        if(Scheduler.currentPCB != null) {
-            Scheduler.currentPCB.stop();
+        if(ki.getScheduler().currentRunning != null) {
+            (ki.getScheduler().currentRunning).stop();
         }
         while (retVal == null) {
             try {

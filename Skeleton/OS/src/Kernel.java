@@ -1,7 +1,9 @@
 public class Kernel extends Process  {
     public Kernel() {
     }
-    Scheduler scheduler;
+
+    private Scheduler scheduler = new Scheduler();
+
     @Override
     public void main() {
             while (true) { // Warning on infinite loop is OK...
@@ -9,14 +11,11 @@ public class Kernel extends Process  {
                     case CreateProcess ->  // Note how we get parameters from OS and set the return value
                             OS.retVal = CreateProcess((UserlandProcess) OS.parameters.get(0), (OS.PriorityType) OS.parameters.get(1));
                     case SwitchProcess -> SwitchProcess();
-
+                    /*
+                    // Priority Schduler
                     case Sleep -> Sleep((int) OS.parameters.get(0));
                     case GetPID -> OS.retVal = GetPid();
                     case Exit -> Exit();
-
-                    /*
-                    // Priority Schduler
-
                     // Devices
                     case Open ->
                     case Close ->
@@ -34,15 +33,27 @@ public class Kernel extends Process  {
                      */
                 }
                 // TODO: Now that we have done the work asked of us, start some process then go to sleep.
+                scheduler.currentRunning.start();
+                this.stop();
 
             }
     }
 
-    private void SwitchProcess() {}
+    //Accessor for Scheduler used in OS
+    public Scheduler getScheduler() {
+        return scheduler;
+    }
+
+    //Call Schedulers SwitchProcess()
+    private void SwitchProcess() {
+        scheduler.SwitchProcess();
+    }
 
     // For assignment 1, you can ignore the priority. We will use that in assignment 2
     private int CreateProcess(UserlandProcess up, OS.PriorityType priority) {
-        return 0; // change this
+        //calls Schedulers create process and returns pid
+        int pid = scheduler.CreateProcess(up, priority);
+        return pid;
     }
 
     private void Sleep(int mills) {

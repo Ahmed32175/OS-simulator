@@ -29,13 +29,13 @@ public abstract class Process implements Runnable{
         semaphore.release();
     }
 
-    public void stop() throws InterruptedException {
-        semaphore.acquire();
+    public void stop()  {
+        semaphore.acquireUninterruptibly();
     }
 
     public void run() {
         semaphore.acquireUninterruptibly();
-        main();
+         main();
         // This is called by the Thread - NEVER CALL THIS!!!
     }
 
