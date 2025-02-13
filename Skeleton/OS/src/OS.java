@@ -16,7 +16,7 @@ public class OS {
         ki.start();
         if(ki.getScheduler().currentRunning != null) {
             (ki.getScheduler().currentRunning).stop();
-        }
+         }
         while (retVal == null) {
             try {
                 Thread.sleep(10);

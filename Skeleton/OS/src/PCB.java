@@ -3,7 +3,7 @@ public class PCB { // Process Control Block
     public int pid;
     private OS.PriorityType priority;
 
-    UserlandProcess up;
+    private UserlandProcess up;
 
     PCB(UserlandProcess up, OS.PriorityType priority) {
         pid = nextPid++;
@@ -25,14 +25,15 @@ public class PCB { // Process Control Block
     public void stop() { /* calls userlandprocess’ stop. Loops with Thread.sleep() until
 //ulp.isStopped() is true.  */
         up.stop();
-//        while(up.isStopped()){
-//            try {
-//                Thread.sleep(50);
-//            } catch (InterruptedException e) {
-//                throw new RuntimeException(e);
-//            }
-//
-//        }
+        while(!up.isStopped()){
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+
     }
 
     public boolean isDone() { /* calls userlandprocess’ isDone() */
