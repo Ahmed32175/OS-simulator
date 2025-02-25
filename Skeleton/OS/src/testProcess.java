@@ -1,4 +1,4 @@
-public class HelloWorld extends UserlandProcess{
+public class testProcess extends UserlandProcess {
     @Override
     public void main() {
         while(true){
@@ -7,8 +7,6 @@ public class HelloWorld extends UserlandProcess{
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            //System.out.println("Hello World");
-
             cooperate();
         }
     }

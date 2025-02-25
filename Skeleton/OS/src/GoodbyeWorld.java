@@ -7,7 +7,7 @@ public class GoodbyeWorld extends UserlandProcess{
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            System.out.println("Goodbye World");
+           // System.out.println("Goodbye World");
             cooperate();
         }
     }

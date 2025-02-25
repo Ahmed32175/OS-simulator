@@ -2,9 +2,9 @@ import java.util.concurrent.Semaphore;
 
 public abstract class Process implements Runnable{
 
-    boolean quantamIsExpired;
-    Thread thread = new Thread(this);
-    Semaphore semaphore = new Semaphore(0);
+     boolean quantamIsExpired;
+     private Thread thread = new Thread(this);
+     private Semaphore semaphore = new Semaphore(0, true);
 
     public Process() {
         quantamIsExpired = false;
