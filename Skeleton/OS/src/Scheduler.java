@@ -12,15 +12,15 @@ public class Scheduler  {
     private LinkedList<PCB> backgroundProcesses =  new LinkedList<>();
     private LinkedList<PCB> sleepingProcesses = new LinkedList<>();
 
-    private Timer timer;
+    private Timer timer = new Timer();
     public PCB currentRunning;
     Random rand = new Random();
     private Clock clock = Clock.tickMillis(ZoneId.systemDefault());
 
     //every 250 ms, if there is process running call request stop on it
     public Scheduler() {
-        this.timer = new Timer();
-        this.currentRunning = null;
+//        this.timer = new Timer();
+//        this.currentRunning = null;
         timer.schedule(new TimerTask() {
             public void run() {
                 if (currentRunning != null) {
@@ -62,7 +62,7 @@ public class Scheduler  {
             if(process.getWakeUpTime() <= clock.millis()){
                 iter.remove();
                 addProcess(process);
-//                System.out.println(process.pid + "has woken up");
+                System.out.println("PID: " + process.pid + " has woken up");
             }
         }
         runFromProperQueue();
@@ -71,7 +71,8 @@ public class Scheduler  {
     public void Sleep(int millis){
         currentRunning.setWakeUpTime(clock.millis() + millis);
         sleepingProcesses.addLast(currentRunning);
-//        System.out.println(currentRunning.pid +" just went to sleep. Priority is " + currentRunning.getPriority());
+        System.out.println("PID: " + currentRunning.pid +" just went to sleep. Priority is " + currentRunning.getPriority());
+        currentRunning.setTimeoutCount(0);
         currentRunning = null; //we make the current process null so that it does not get added into a priority queue when switchProcess() gets called.
         SwitchProcess(); // change current running process
     }
@@ -130,7 +131,7 @@ public class Scheduler  {
     }
 
     private void demotePriority(){
-        System.out.println(currentRunning.pid + " was demoted");
+        System.out.println("PID: " + currentRunning.pid + " was demoted");
         if(currentRunning.getPriority() == OS.PriorityType.realtime){
             currentRunning.setPriority(OS.PriorityType.interactive);
         }

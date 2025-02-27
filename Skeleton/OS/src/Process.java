@@ -30,7 +30,11 @@ public abstract class Process implements Runnable{
     }
 
     public void stop()  {
-        semaphore.acquireUninterruptibly();
+        try {
+            semaphore.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void run() {
