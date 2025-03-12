@@ -17,10 +17,10 @@ public class Scheduler  {
     Random rand = new Random();
     private Clock clock = Clock.tickMillis(ZoneId.systemDefault());
 
+//    private Kernel kernel = OS.ki;
+
     //every 250 ms, if there is process running call request stop on it
     public Scheduler() {
-//        this.timer = new Timer();
-//        this.currentRunning = null;
         timer.schedule(new TimerTask() {
             public void run() {
                 if (currentRunning != null) {
@@ -28,6 +28,10 @@ public class Scheduler  {
                 }
             }
         }, 0, 250);
+    }
+
+    public PCB getCurrentRunning(){
+        return currentRunning;
     }
 
     //Create a user land process and add it to list of processes, if there is no processes
@@ -44,6 +48,7 @@ public class Scheduler  {
     public void SwitchProcess(){
         if(currentRunning != null){System.out.println("PID: " + currentRunning.pid + "    PRIORITY: "+ currentRunning.getPriority());}
 //        System.out.println("Sleeping queue size: " + sleepingProcesses.size());
+
         //increment processes timeout count
         if(currentRunning != null) {
             currentRunning.setTimeoutCount(currentRunning.getTimeoutCount() + 1);
@@ -85,6 +90,13 @@ public class Scheduler  {
             interactiveProcesses.remove(currentRunning);
         }
         else{ backgroundProcesses.remove(currentRunning);}
+        //close all process devices
+        for(int i =0; i< 10; i++){
+            if(currentRunning.getDeviceArray()[i] != -1){
+//                kernel.Close();
+            }
+
+        }
         //make sure process never runs again and choose new process to run
         currentRunning = null;
         SwitchProcess();
@@ -131,7 +143,7 @@ public class Scheduler  {
     }
 
     private void demotePriority(){
-        System.out.println("PID: " + currentRunning.pid + " was demoted");
+        if(currentRunning.getPriority() != OS.PriorityType.background){System.out.println("PID: " + currentRunning.pid + " WAS DEMOTED!");}
         if(currentRunning.getPriority() == OS.PriorityType.realtime){
             currentRunning.setPriority(OS.PriorityType.interactive);
         }

@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 public class PCB { // Process Control Block
     private static int nextPid = 1;
     public int pid;
@@ -5,12 +7,18 @@ public class PCB { // Process Control Block
     private UserlandProcess up;
     private long wakeUpTime;
     private int timeoutCount;
+    private final int[] deviceArray = new int[10];
 
     PCB(UserlandProcess up, OS.PriorityType priority) {
         pid = nextPid++;
         this.up = up;
         this.priority = priority;
         this.timeoutCount = 0;
+        Arrays.fill(deviceArray, -1);
+    }
+
+    public int[] getDeviceArray() {
+        return deviceArray;
     }
 
     public int getTimeoutCount() {
