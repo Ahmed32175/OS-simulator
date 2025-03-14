@@ -1,9 +1,13 @@
-public class Kernel extends Process   {
+import java.util.Arrays;
+
+public class Kernel extends Process implements Device {
+    private Scheduler scheduler;
+    private VirtualFileSystem vfs = new VirtualFileSystem();
+
     public Kernel() {
+        this.scheduler = new Scheduler(this);
     }
 
-    private Scheduler scheduler = new Scheduler();
-    private VirtualFileSystem vfs = new VirtualFileSystem();
 
     @Override
     public void main() {
@@ -72,36 +76,40 @@ public class Kernel extends Process   {
         return scheduler.currentRunning.pid;
     }
 
-    private int Open(String s) {
+    public int Open(String s) {
         for(int i =0; i < 10; i++){
-            if(scheduler.getCurrentRunning().getDeviceArray()[i] == -1){
+            if(scheduler.getCurrentRunning().getDeviceArray()[i] == -1){//if array spot is empty
                 int id = vfs.Open(s);
-                if(id == -1) {
+                if(id == -1) {//if open return -1 there was an error
                     return id;
                 }
-                else{
+                else{//place id in device array
                     scheduler.getCurrentRunning().getDeviceArray()[i] = id;
                     return i;
                 }
             }
         }
-        return -1; // change this
+        return -1;
     }
 
-    private void Close(int id) {
+    public void Close(int id) {
         vfs.Close(scheduler.getCurrentRunning().getDeviceArray()[id]);
         scheduler.getCurrentRunning().getDeviceArray()[id] = -1;
+        //for testing
+        System.out.println("Device Array: "+Arrays.toString(scheduler.getCurrentRunning().getDeviceArray())+"\n");
     }
 
-    private byte[] Read(int id, int size) {
+    public byte[] Read(int id, int size) {
         return vfs.Read(scheduler.getCurrentRunning().getDeviceArray()[id], size);
     }
 
-    private void Seek(int id, int to) {
+    public void Seek(int id, int to) {
         vfs.Seek(scheduler.getCurrentRunning().getDeviceArray()[id], to);
+        //for testing
+        System.out.println("Device Array: "+Arrays.toString(scheduler.getCurrentRunning().getDeviceArray())+"\n");
     }
 
-    private int Write(int id, byte[] data) {
+    public int Write(int id, byte[] data) {
         return vfs.Write(scheduler.getCurrentRunning().getDeviceArray()[id], data);
     }
 

@@ -1,6 +1,7 @@
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Arrays;
 
 public class FakeFileSystem implements Device{
 
@@ -25,14 +26,13 @@ public class FakeFileSystem implements Device{
     }
 
     @Override
-    public int Close(int id) {
+    public void Close(int id) {
         try {
             deviceArray[id].close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         deviceArray[id] = null;
-        return 0;
     }
 
     @Override

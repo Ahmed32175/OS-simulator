@@ -1,17 +1,22 @@
+import java.util.Arrays;
+import java.util.Random;
+
 public class VirtualFileSystem implements Device{
 
     Device[] deviceArray = new Device[10];
     int[] idArray = new int[10];
+    RandomDevice rand = new RandomDevice();
+    FakeFileSystem fs = new FakeFileSystem();
 
     @Override
     public int Open(String s) {
         String[] arg = s.split(" ");
-        Device device = null;
+        Device device;
         if(arg[0].equals("random")){
-            device = new RandomDevice();
+            device = rand;
         }
         else if(arg[0].equals("file")){
-            device = new FakeFileSystem();
+            device = fs;
         }
         else{
             throw new RuntimeException();
@@ -27,10 +32,9 @@ public class VirtualFileSystem implements Device{
     }
 
     @Override
-    public int Close(int id) {
+    public void Close(int id) {
         deviceArray[id] = null;
         idArray[id] = 0;
-        return 0;
     }
 
     @Override

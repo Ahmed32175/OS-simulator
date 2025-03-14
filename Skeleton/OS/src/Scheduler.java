@@ -1,5 +1,4 @@
 import java.time.Clock;
-import java.time.Duration;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.Timer;
@@ -17,10 +16,11 @@ public class Scheduler  {
     Random rand = new Random();
     private Clock clock = Clock.tickMillis(ZoneId.systemDefault());
 
-//    private Kernel kernel = OS.ki;
+    private Kernel kernel;
 
     //every 250 ms, if there is process running call request stop on it
-    public Scheduler() {
+    public Scheduler(Kernel kernel) {
+        this.kernel = kernel;
         timer.schedule(new TimerTask() {
             public void run() {
                 if (currentRunning != null) {
@@ -46,7 +46,7 @@ public class Scheduler  {
     }
     //If a process is currently running and it is not done add it to end of queue then run next in queue
     public void SwitchProcess(){
-        if(currentRunning != null){System.out.println("PID: " + currentRunning.pid + "    PRIORITY: "+ currentRunning.getPriority());}
+//        if(currentRunning != null){System.out.println("PID: " + currentRunning.pid + "    PRIORITY: "+ currentRunning.getPriority());}
 //        System.out.println("Sleeping queue size: " + sleepingProcesses.size());
 
         //increment processes timeout count
@@ -67,7 +67,7 @@ public class Scheduler  {
             if(process.getWakeUpTime() <= clock.millis()){
                 iter.remove();
                 addProcess(process);
-                System.out.println("PID: " + process.pid + " has woken up");
+//                System.out.println("PID: " + process.pid + " has woken up");
             }
         }
         runFromProperQueue();
@@ -76,7 +76,7 @@ public class Scheduler  {
     public void Sleep(int millis){
         currentRunning.setWakeUpTime(clock.millis() + millis);
         sleepingProcesses.addLast(currentRunning);
-        System.out.println("PID: " + currentRunning.pid +" just went to sleep. Priority is " + currentRunning.getPriority());
+//        System.out.println("PID: " + currentRunning.pid +" just went to sleep. Priority is " + currentRunning.getPriority());
         currentRunning.setTimeoutCount(0);
         currentRunning = null; //we make the current process null so that it does not get added into a priority queue when switchProcess() gets called.
         SwitchProcess(); // change current running process
@@ -91,11 +91,10 @@ public class Scheduler  {
         }
         else{ backgroundProcesses.remove(currentRunning);}
         //close all process devices
-        for(int i =0; i< 10; i++){
+        for(int i =0; i<currentRunning.getDeviceArray().length; i++){
             if(currentRunning.getDeviceArray()[i] != -1){
-//                kernel.Close();
+                kernel.Close(i);
             }
-
         }
         //make sure process never runs again and choose new process to run
         currentRunning = null;
@@ -143,7 +142,7 @@ public class Scheduler  {
     }
 
     private void demotePriority(){
-        if(currentRunning.getPriority() != OS.PriorityType.background){System.out.println("PID: " + currentRunning.pid + " WAS DEMOTED!");}
+//        if(currentRunning.getPriority() != OS.PriorityType.background){System.out.println("PID: " + currentRunning.pid + " WAS DEMOTED!");}
         if(currentRunning.getPriority() == OS.PriorityType.realtime){
             currentRunning.setPriority(OS.PriorityType.interactive);
         }

@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.Random;
 
 public class RandomDevice implements Device {
@@ -6,9 +7,9 @@ public class RandomDevice implements Device {
 
     @Override
     public int Open(String s) {
-        Random rand = new Random();
         for(int i =0; i<deviceArray.length; i++) {
-            if (deviceArray[i] != null) {
+            if (deviceArray[i] == null) {
+                Random rand = new Random();
                 if(s != null && !s.isEmpty()){
                     int seed = Integer.parseInt(s);
                     rand.setSeed(seed);
@@ -21,9 +22,8 @@ public class RandomDevice implements Device {
     }
 
     @Override
-    public int Close(int id) {
+    public void Close(int id) {
         deviceArray[id] = null;
-        return 0;
     }
 
     @Override
