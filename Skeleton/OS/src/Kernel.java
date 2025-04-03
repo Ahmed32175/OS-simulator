@@ -26,11 +26,11 @@ public class Kernel extends Process implements Device {
                     case Read -> OS.retVal = Read((int) OS.parameters.get(0), (int) OS.parameters.get(1));
                     case Seek ->  Seek((int) OS.parameters.get(0), (int) OS.parameters.get(1));
                     case Write -> OS.retVal = Write((int) OS.parameters.get(0), (byte[]) OS.parameters.get(1));
-                        /*
                     // Messages
-                    case GetPIDByName ->
-                    case SendMessage ->
-                    case WaitForMessage ->
+                    case GetPIDByName -> OS.retVal = GetPidByName((String) OS.parameters.get(0));
+                    case SendMessage -> SendMessage((KernelMessage) OS.parameters.get(0));
+                    case WaitForMessage -> OS.retVal = WaitForMessage();
+                    /*
                     // Memory
                     case GetMapping ->
                     case AllocateMemory ->
@@ -113,15 +113,16 @@ public class Kernel extends Process implements Device {
         return vfs.Write(scheduler.getCurrentRunning().getDeviceArray()[id], data);
     }
 
-    private void SendMessage(/*KernelMessage km*/) {
+    private void SendMessage(KernelMessage km) {
+        scheduler.SendMessage(km);
     }
 
     private KernelMessage WaitForMessage() {
-        return null;
+        return scheduler.WaitForMessage();
     }
 
     private int GetPidByName(String name) {
-        return 0; // change this
+        return scheduler.GetPidByName(name);
     }
 
     private void GetMapping(int virtualPage) {

@@ -10,6 +10,8 @@ public class Scheduler  {
     private LinkedList<PCB> interactiveProcesses =  new LinkedList<>();
     private LinkedList<PCB> backgroundProcesses =  new LinkedList<>();
     private LinkedList<PCB> sleepingProcesses = new LinkedList<>();
+    private HashMap<Integer, PCB> proccessMap = new HashMap<>();
+    private HashMap<Integer, PCB> waitingProccess = new HashMap<>();
 
     private Timer timer = new Timer();
     public PCB currentRunning;
@@ -83,6 +85,20 @@ public class Scheduler  {
     }
 
     public void Exit(){
+        removeProcess(currentRunning);
+        //close all process devices
+        for(int i =0; i<currentRunning.getDeviceArray().length; i++){
+            if(currentRunning.getDeviceArray()[i] != -1){
+                kernel.Close(i);
+            }
+        }
+        proccessMap.remove(currentRunning.pid);
+        //make sure process never runs again and choose new process to run
+        currentRunning = null;
+        SwitchProcess();
+    }
+
+    private void removeProcess(PCB process){
         if(currentRunning.getPriority() == OS.PriorityType.realtime){
             realtimeProcesses.remove(currentRunning);
         }
@@ -90,15 +106,6 @@ public class Scheduler  {
             interactiveProcesses.remove(currentRunning);
         }
         else{ backgroundProcesses.remove(currentRunning);}
-        //close all process devices
-        for(int i =0; i<currentRunning.getDeviceArray().length; i++){
-            if(currentRunning.getDeviceArray()[i] != -1){
-                kernel.Close(i);
-            }
-        }
-        //make sure process never runs again and choose new process to run
-        currentRunning = null;
-        SwitchProcess();
     }
 
     private void addProcess(PCB process){
@@ -109,6 +116,8 @@ public class Scheduler  {
             interactiveProcesses.add(process);
         }
         else{ backgroundProcesses.add(process);}
+        //add to main hashmap
+        proccessMap.put(process.pid, process);
     }
 
     private void runFromProperQueue(){
@@ -153,5 +162,41 @@ public class Scheduler  {
     }
 
 
+    public void SendMessage(KernelMessage km) {
+        KernelMessage recipientMessage = new KernelMessage(km);
+        recipientMessage.senderPid = currentRunning.pid;
+        PCB tpid = proccessMap.get(km.targetPid);
+        if(tpid != null){
+            tpid.getMessagesQueue().add(recipientMessage);
+            if(waitingProccess.get(tpid.pid) != null){
+                addProcess(waitingProccess.remove(tpid.pid));
+            }
+        }
+    }
 
+    public KernelMessage WaitForMessage() {
+        if(!currentRunning.getMessagesQueue().isEmpty()){
+            currentRunning.setWaiting(false);
+            waitingProccess.remove(currentRunning.pid);
+            return currentRunning.getMessagesQueue().pollFirst();
+        }
+        else{
+            waitingProccess.put(currentRunning.pid, currentRunning);
+            removeProcess(currentRunning);
+            currentRunning.setWaiting(false);
+            currentRunning = null;
+            SwitchProcess();
+        }
+//        return null;
+        return new KernelMessage(currentRunning.pid,currentRunning.pid,0,(currentRunning.pid + " is waiting").getBytes());
+    }
+
+    public int GetPidByName(String name) {
+        for(PCB p : proccessMap.values()){
+            if(p.getName().equals(name)){
+                return p.pid;
+            }
+        }
+        return 0;
+    }
 }

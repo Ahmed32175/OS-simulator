@@ -117,14 +117,25 @@ public class OS {
 
     // Messages
     public static void SendMessage(KernelMessage km) {
+        parameters.clear();
+        parameters.add(km);
+        currentCall = CallType.SendMessage;
+        startTheKernel();
     }
 
     public static KernelMessage WaitForMessage() {
-        return null;
+        parameters.clear();
+        currentCall = CallType.WaitForMessage;
+        startTheKernel();
+        return (KernelMessage) retVal;
     }
 
     public static int GetPidByName(String name) {
-        return 0; // Change this
+        parameters.clear();
+        parameters.add(name);
+        currentCall = CallType.GetPIDByName;
+        startTheKernel();
+        return (int) retVal;
     }
 
     // Memory

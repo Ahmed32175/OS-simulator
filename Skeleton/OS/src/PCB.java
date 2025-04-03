@@ -1,4 +1,5 @@
 import java.util.Arrays;
+import java.util.LinkedList;
 
 public class PCB { // Process Control Block
     private static int nextPid = 1;
@@ -8,6 +9,9 @@ public class PCB { // Process Control Block
     private long wakeUpTime;
     private int timeoutCount;
     private final int[] deviceArray = new int[10];
+    private String proccessName = "";
+    private boolean isWaiting = false;
+    private LinkedList<KernelMessage> messagesQueue = new LinkedList<>();
 
     PCB(UserlandProcess up, OS.PriorityType priority) {
         pid = nextPid++;
@@ -15,6 +19,11 @@ public class PCB { // Process Control Block
         this.priority = priority;
         this.timeoutCount = 0;
         Arrays.fill(deviceArray, -1);
+        this.proccessName = up.getClass().getSimpleName();
+    }
+
+    public LinkedList<KernelMessage> getMessagesQueue() {
+        return messagesQueue;
     }
 
     public int[] getDeviceArray() {
@@ -38,7 +47,7 @@ public class PCB { // Process Control Block
     }
 
     public String getName() {
-        return null;
+        return proccessName;
     }
 
     OS.PriorityType getPriority() {
@@ -65,5 +74,13 @@ public class PCB { // Process Control Block
 
     public void setPriority(OS.PriorityType newPriority) {
         priority = newPriority;
+    }
+
+    public boolean isWaiting() {
+        return isWaiting;
+    }
+
+    public void setWaiting(boolean waiting) {
+        isWaiting = waiting;
     }
 }
