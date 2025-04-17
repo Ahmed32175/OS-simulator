@@ -7,8 +7,10 @@ public class Init extends UserlandProcess {
 //        OS.CreateProcess(new testProcess(), OS.PriorityType.realtime);
 //        OS.CreateProcess(new HelloWorld(), OS.PriorityType.realtime);
 //        OS.CreateProcess((new testSleepProcess()), OS.PriorityType.realtime);
-          OS.CreateProcess((new Ping()), OS.PriorityType.realtime);
-          OS.CreateProcess((new Pong()), OS.PriorityType.realtime);
+//          OS.CreateProcess((new Ping()), OS.PriorityType.realtime);
+//          OS.CreateProcess((new Pong()), OS.PriorityType.realtime);
+          OS.CreateProcess(new pagingTest(), OS.PriorityType.realtime);
+          OS.CreateProcess(new pagingTest2(), OS.PriorityType.realtime);
 
         OS.Exit();
 

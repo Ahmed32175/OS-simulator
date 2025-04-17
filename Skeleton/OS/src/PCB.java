@@ -12,6 +12,13 @@ public class PCB { // Process Control Block
     private String proccessName = "";
     private boolean isWaiting = false;
     private LinkedList<KernelMessage> messagesQueue = new LinkedList<>();
+    private int[] mappingArray;
+
+    public int[] getMappingArray() {
+        return mappingArray;
+    }
+
+
 
     PCB(UserlandProcess up, OS.PriorityType priority) {
         pid = nextPid++;
@@ -20,6 +27,8 @@ public class PCB { // Process Control Block
         this.timeoutCount = 0;
         Arrays.fill(deviceArray, -1);
         this.proccessName = up.getClass().getSimpleName();
+        this.mappingArray = new int[100];
+        Arrays.fill(mappingArray, -1);
     }
 
     public LinkedList<KernelMessage> getMessagesQueue() {

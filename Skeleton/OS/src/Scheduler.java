@@ -58,6 +58,8 @@ public class Scheduler  {
                 demotePriority();
             }
         }
+        //clear TLB
+        Hardware.clearTLB();
         //stop process, if it's not done add it to correct queue.
         if(currentRunning != null && !currentRunning.isDone()){
             addProcess(currentRunning);
@@ -93,6 +95,7 @@ public class Scheduler  {
             }
         }
         proccessMap.remove(currentRunning.pid);
+        kernel.FreeAllMemory(currentRunning);
         //make sure process never runs again and choose new process to run
         currentRunning = null;
         SwitchProcess();
@@ -183,11 +186,10 @@ public class Scheduler  {
         else{
             waitingProccess.put(currentRunning.pid, currentRunning);
             removeProcess(currentRunning);
-            currentRunning.setWaiting(false);
+            currentRunning.setWaiting(true);
             currentRunning = null;
             SwitchProcess();
         }
-//        return null;
         return new KernelMessage(currentRunning.pid,currentRunning.pid,0,(currentRunning.pid + " is waiting").getBytes());
     }
 

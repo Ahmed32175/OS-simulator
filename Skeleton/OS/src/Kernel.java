@@ -1,11 +1,16 @@
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class Kernel extends Process implements Device {
     private Scheduler scheduler;
     private VirtualFileSystem vfs = new VirtualFileSystem();
+    private boolean[] pageIsFree = new boolean[1000];
+    private int pageIndex = 0;
 
     public Kernel() {
         this.scheduler = new Scheduler(this);
+        Arrays.fill(pageIsFree, true);
     }
 
 
@@ -30,12 +35,11 @@ public class Kernel extends Process implements Device {
                     case GetPIDByName -> OS.retVal = GetPidByName((String) OS.parameters.get(0));
                     case SendMessage -> SendMessage((KernelMessage) OS.parameters.get(0));
                     case WaitForMessage -> OS.retVal = WaitForMessage();
-                    /*
+
                     // Memory
-                    case GetMapping ->
-                    case AllocateMemory ->
-                    case FreeMemory ->
-                     */
+                    case GetMapping -> GetMapping((int)OS.parameters.get(0));
+                    case AllocateMemory -> OS.retVal = AllocateMemory((int) OS.parameters.get(0));
+                    case FreeMemory -> OS.retVal = FreeMemory((int) OS.parameters.get(0), (int) OS.parameters.get(1));
                 }
                 // TODO: Now that we have done the work asked of us, start some process then go to sleep.
                 if(scheduler.currentRunning != null) {
@@ -126,17 +130,89 @@ public class Kernel extends Process implements Device {
     }
 
     private void GetMapping(int virtualPage) {
+        //CHANGE TO UPDATE RANDOMLY
+        int pm = scheduler.getCurrentRunning().getMappingArray()[virtualPage];
+        if(pm != -1) {
+            Hardware.updateTLB(virtualPage, pm);
+        }
+        else{
+            System.out.println("seg-fault");
+            OS.Exit();
+        }
     }
 
     private int AllocateMemory(int size) {
-        return 0; // change this
+        int numberOfPages = size/1024;
+
+        List<Integer> freePages = new ArrayList<>();
+        for (int i = 0; i < pageIsFree.length && freePages.size() < numberOfPages; i++) {
+            if (pageIsFree[i]) {
+                freePages.add(i);
+            }
+        }
+
+        if (freePages.size() < numberOfPages) {
+            return -1; // Not enough memory
+        }
+
+        int[] map = scheduler.currentRunning.getMappingArray();
+        int pagesMapped = 0;
+        int firstVirtualPage = -1;
+
+        int i=0;
+        while (i <= map.length) {
+            boolean memoryFound = true;
+                for (int j = i; j < i+ numberOfPages && j < map.length; j++) {
+                    if (map[j] != -1) {
+                        memoryFound = false;
+                        i = j+1;
+                        break;
+                    }
+                }
+                if (!memoryFound) {
+                    continue;
+                }
+                System.out.println("memory found at virtual address: " + i);
+                for(int k = 0; k < numberOfPages; k++) {
+                    int physicalPage = freePages.get(pagesMapped);
+                    map[i+k] = physicalPage;
+                    System.out.println("memory mapped: " +(i+k) +" to "+ physicalPage);
+                    pageIsFree[physicalPage] = false;
+
+                    if (firstVirtualPage == -1) {
+                        firstVirtualPage = i;
+                    }
+                    pagesMapped++;
+                }
+                break;
+        }
+        return firstVirtualPage * 1024;
     }
 
     private boolean FreeMemory(int pointer, int size) {
+        int firstPage = pointer/1024;
+        int numPages = size/1024;
+        int[] map = scheduler.currentRunning.getMappingArray();
+
+        for(int i =0; i < numPages; i++) {
+            int physicalPage = map[i+firstPage];
+            if(physicalPage != -1) {
+                pageIsFree[physicalPage] = true;
+                map[i + firstPage] = -1;
+            }
+        }
         return true;
     }
 
-    private void FreeAllMemory(PCB currentlyRunning) {
+    public void FreeAllMemory(PCB currentlyRunning) {
+        int[] map = currentlyRunning.getMappingArray();
+        for(int i =0; i < map.length; i++) {
+            int physicalPage = map[i];
+            if(physicalPage != -1) {
+                pageIsFree[map[i]] = true;
+                map[i] = -1;
+            }
+        }
     }
 
 }
