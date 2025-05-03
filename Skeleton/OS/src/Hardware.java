@@ -58,6 +58,10 @@ public class Hardware {
         }
     }
 
+    public static byte[] getMemory() {
+        return memory;
+    }
+
 
 
 }

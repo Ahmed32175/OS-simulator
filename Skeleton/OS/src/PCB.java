@@ -12,9 +12,9 @@ public class PCB { // Process Control Block
     private String proccessName = "";
     private boolean isWaiting = false;
     private LinkedList<KernelMessage> messagesQueue = new LinkedList<>();
-    private int[] mappingArray;
+    private VirtualToPhysicalMapping[] mappingArray;
 
-    public int[] getMappingArray() {
+    public VirtualToPhysicalMapping[] getMappingArray() {
         return mappingArray;
     }
 
@@ -27,8 +27,8 @@ public class PCB { // Process Control Block
         this.timeoutCount = 0;
         Arrays.fill(deviceArray, -1);
         this.proccessName = up.getClass().getSimpleName();
-        this.mappingArray = new int[100];
-        Arrays.fill(mappingArray, -1);
+        this.mappingArray = new VirtualToPhysicalMapping[1024];
+        Arrays.fill(mappingArray, null);
     }
 
     public LinkedList<KernelMessage> getMessagesQueue() {

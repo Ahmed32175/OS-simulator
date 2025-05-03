@@ -4,13 +4,20 @@ import java.util.List;
 
 public class Kernel extends Process implements Device {
     private Scheduler scheduler;
+
+    public VirtualFileSystem getVfs() {
+        return vfs;
+    }
+
     private VirtualFileSystem vfs = new VirtualFileSystem();
-    private boolean[] pageIsFree = new boolean[1000];
-    private int pageIndex = 0;
+    private boolean[] pageIsFree = new boolean[1024];
+    private int pageNumber = 0;
+    public int swapfile;
 
     public Kernel() {
         this.scheduler = new Scheduler(this);
         Arrays.fill(pageIsFree, true);
+        this.swapfile = vfs.Open("file swapfile.txt");
     }
 
 
@@ -60,6 +67,8 @@ public class Kernel extends Process implements Device {
     private void SwitchProcess() {
         scheduler.SwitchProcess();
     }
+
+
 
     // For assignment 1, you can ignore the priority. We will use that in assignment 2
     private int CreateProcess(UserlandProcess up, OS.PriorityType priority) {
@@ -130,87 +139,137 @@ public class Kernel extends Process implements Device {
     }
 
     private void GetMapping(int virtualPage) {
-        //CHANGE TO UPDATE RANDOMLY
-        int pm = scheduler.getCurrentRunning().getMappingArray()[virtualPage];
-        if(pm != -1) {
-            Hardware.updateTLB(virtualPage, pm);
-        }
-        else{
+        VirtualToPhysicalMapping pm = scheduler.getCurrentRunning().getMappingArray()[virtualPage];
+        //if trying to access memory that was never allocated
+        if (pm == null) {
             System.out.println("seg-fault");
             OS.Exit();
+            return;
+        }
+        //if need to map virtual memory to physical memory
+        if(pm.physicalPN == -1) {
+            for(int i =0; i < pageIsFree.length; i++){
+                if(pageIsFree[i]){
+                    pageIsFree[i] = false;
+                    pm.physicalPN = i;
+                    Hardware.updateTLB(virtualPage, pm.physicalPN);
+                    if(pm.diskPN != -1){
+                        //load old data and populate physical page
+                        byte [] buffer = vfs.Read(swapfile, 1024);
+                        for(int j =0; j<1024; j++){
+                            Hardware.getMemory()[(pm.physicalPN * 1024) + j] = buffer[j];
+                        }
+                    }
+                    else{
+                        //populate memory with 0's
+                        for(int j =0; j<1024; j++){
+                            Hardware.getMemory()[(pm.physicalPN * 1024) + j] = 0;
+                        }
+                    }
+                    return;
+                }
+            }
+            //if no physical page available, do page swap:
+            while(true) {
+                System.out.println("NO PHYSICAL PAGE AVAILABLE, PAGES SWAPPING");
+                PCB victimProcess = scheduler.getRandomProcess();
+                for (VirtualToPhysicalMapping m : victimProcess.getMappingArray()) {
+                    if (m != null && m.physicalPN != -1) {
+                        System.out.println("WRITING VICTIM TO DISK");
+                        //Write the victim page to disk,
+                        // Read victim's physical page content into byte array
+                        byte[] buffer = new byte[1024];
+                        byte[] memory = Hardware.getMemory();
+                        for (int j = 0; j < 1024; j++) {
+                            buffer[j] = memory[(m.physicalPN * 1024) + j];
+                        }
+//                        // Write page to swap file
+                        System.out.println("WRITING VICTIM TO SWAPFILE");
+                        vfs.Write(swapfile, buffer);
+
+                        //assign new block of the swap file if none already
+                        if (m.diskPN == -1) {
+                            m.diskPN = pageNumber++;
+                        }
+                        //Set victim’s physical page to -1 and currs to old val.
+                        pm.physicalPN = m.physicalPN;
+                        m.physicalPN = -1;
+                        Hardware.updateTLB(virtualPage, pm.physicalPN);
+                        if(pm.diskPN != -1){
+                            //load old data and populate physical page
+                            byte [] buff = vfs.Read(swapfile, 1024);
+                            for(int j =0; j<1024; j++){
+                                Hardware.getMemory()[(pm.physicalPN * 1024) + j] = buff[j];
+                            }
+                        }
+                        else{
+                            //populate memory with 0's
+                            for(int j =0; j<1024; j++){
+                                Hardware.getMemory()[(pm.physicalPN * 1024) + j] = 0;
+                            }
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+        //mapping already exists, update TLB
+        else{
+            Hardware.updateTLB(virtualPage, pm.physicalPN);
         }
     }
 
     private int AllocateMemory(int size) {
         int numberOfPages = size/1024;
-
-        List<Integer> freePages = new ArrayList<>();
-        for (int i = 0; i < pageIsFree.length && freePages.size() < numberOfPages; i++) {
-            if (pageIsFree[i]) {
-                freePages.add(i);
-            }
-        }
-
-        if (freePages.size() < numberOfPages) {
-            return -1; // Not enough memory
-        }
-
-        int[] map = scheduler.currentRunning.getMappingArray();
-        int pagesMapped = 0;
+        VirtualToPhysicalMapping[] map = scheduler.currentRunning.getMappingArray();
         int firstVirtualPage = -1;
 
-        int i=0;
-        while (i <= map.length) {
-            boolean memoryFound = true;
-                for (int j = i; j < i+ numberOfPages && j < map.length; j++) {
-                    if (map[j] != -1) {
-                        memoryFound = false;
-                        i = j+1;
-                        break;
-                    }
+        for(int i =0; i <= map.length-numberOfPages; i++){
+            boolean freeBlock = true;
+            for(int j=i; j < i + numberOfPages; j++){
+                if(map[j] != null){
+                    freeBlock = false;
+                    i=j;
+                    break;
                 }
-                if (!memoryFound) {
-                    continue;
-                }
-                System.out.println("memory found at virtual address: " + i);
-                for(int k = 0; k < numberOfPages; k++) {
-                    int physicalPage = freePages.get(pagesMapped);
-                    map[i+k] = physicalPage;
-                    System.out.println("memory mapped: " +(i+k) +" to "+ physicalPage);
-                    pageIsFree[physicalPage] = false;
+            }
 
-                    if (firstVirtualPage == -1) {
-                        firstVirtualPage = i;
-                    }
-                    pagesMapped++;
+            if (freeBlock) {
+                firstVirtualPage = i;
+                for (int k = i; k < i + numberOfPages; k++) {
+                    map[k] = new VirtualToPhysicalMapping();
                 }
                 break;
+            }
         }
-        return firstVirtualPage * 1024;
+        return firstVirtualPage;
     }
 
     private boolean FreeMemory(int pointer, int size) {
         int firstPage = pointer/1024;
         int numPages = size/1024;
-        int[] map = scheduler.currentRunning.getMappingArray();
+        VirtualToPhysicalMapping[] map = scheduler.currentRunning.getMappingArray();
 
         for(int i =0; i < numPages; i++) {
-            int physicalPage = map[i+firstPage];
+            int physicalPage = map[i+firstPage].physicalPN;
             if(physicalPage != -1) {
                 pageIsFree[physicalPage] = true;
-                map[i + firstPage] = -1;
+                map[i+ firstPage] = null;
             }
         }
         return true;
     }
 
     public void FreeAllMemory(PCB currentlyRunning) {
-        int[] map = currentlyRunning.getMappingArray();
+        VirtualToPhysicalMapping[] map = currentlyRunning.getMappingArray();
+
         for(int i =0; i < map.length; i++) {
-            int physicalPage = map[i];
-            if(physicalPage != -1) {
-                pageIsFree[map[i]] = true;
-                map[i] = -1;
+            if(map[i] != null) {
+                int physicalPage = map[i].physicalPN;
+                if (physicalPage != -1) {
+                    pageIsFree[map[i].physicalPN] = true;
+                    map[i] = null;
+                }
             }
         }
     }

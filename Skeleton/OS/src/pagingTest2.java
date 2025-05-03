@@ -5,14 +5,14 @@ public class pagingTest2 extends UserlandProcess{
         System.out.println("switching process");
         int x= OS.AllocateMemory(2048);
         if (x != -1) {
-            System.out.println("memory allocated at virtual address: "+x);
+            System.out.println("memory allocated successfully");
         }
         else{
             System.out.println("memory not allocated");
         }
         int y = OS.AllocateMemory(4096);
         if (y != -1) {
-            System.out.println("memory allocated at virtual address: "+y);
+            System.out.println("memory allocated successfully");
         }
         else{
             System.out.println("memory not allocated");
@@ -37,7 +37,7 @@ public class pagingTest2 extends UserlandProcess{
         System.out.println("Allocating memory at previously freed address 0");
         int z= OS.AllocateMemory(2048);
         if (z != -1) {
-            System.out.println("memory allocated at virtual address: "+z);
+            System.out.println("memory allocated successfully");
         }
         else{
             System.out.println("memory not allocated");

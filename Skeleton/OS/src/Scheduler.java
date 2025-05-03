@@ -201,4 +201,12 @@ public class Scheduler  {
         }
         return 0;
     }
+
+    public PCB getRandomProcess(){
+        //choose random process
+        int prob = rand.nextInt(proccessMap.size());
+        List<PCB> processes = new ArrayList<>(proccessMap.values());
+        return processes.get(prob);
+    }
+
 }
